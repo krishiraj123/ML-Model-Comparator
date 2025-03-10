@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ML Analysis | Upload</title>
+    <!-- MDB UI Kit CSS (Material Design for Bootstrap 5) -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/6.2.0/mdb.min.css"
+    />
+    <!-- Font Awesome for icons -->
+    <script
+      src="https://kit.fontawesome.com/a076d05399.js"
+      crossorigin="anonymous"
+    ></script>
+    <style>
+      body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+      }
+      .card-upload {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+      }
+      .drop-zone {
+        border: 2px dashed #667eea;
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+      .drop-zone:hover {
+        background: rgba(102, 126, 234, 0.1);
+        border-color: #764ba2;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container py-5">
+      <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+          <div class="card card-upload">
+            <div class="card-header text-center bg-white">
+              <h2 class="mb-0">📊 Dataset Analysis</h2>
+            </div>
+            <div class="card-body p-5">
+              <form
+                action="/analyze"
+                method="post"
+                enctype="multipart/form-data"
+              >
+                <!-- Target Column Selection -->
+                <div class="mb-3">
+                  <label for="targetColumn" class="form-label"
+                    >Select Target Column</label
+                  >
+                  <select
+                    class="form-select"
+                    name="target_column"
+                    id="targetColumn"
+                    required
+                  >
+                    <option value="auto">Auto-select (Last Column)</option>
+                  </select>
+                  <div class="form-text">
+                    We'll automatically select the last column if you choose
+                    auto-select.
+                  </div>
+                </div>
+                <!-- File Upload Drop Zone -->
+                <div class="mb-3">
+                  <div class="drop-zone p-4 text-center rounded-3">
+                    <input
+                      type="file"
+                      name="file"
+                      id="fileInput"
+                      class="d-none"
+                      required
+                    />
+                    <label for="fileInput" class="btn btn-link">
+                      <i class="fas fa-cloud-upload-alt fa-2x"></i>
+                      <h5 class="mt-2">Drag &amp; Drop or Click to Upload</h5>
+                      <p class="text-muted">CSV files only (Max 100MB)</p>
+                    </label>
+                  </div>
+                </div>
+                <!-- Display Selected File Name -->
+                <div
+                  id="fileNameDisplay"
+                  class="alert alert-info d-none"
+                  role="alert"
+                ></div>
+                <!-- Submit Button -->
+                <div class="d-grid">
+                  <button type="submit" class="btn btn-success btn-lg">
+                    <i class="fas fa-cogs"></i> Analyze Dataset
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MDB UI Kit JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/6.2.0/mdb.min.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const fileInput = document.getElementById("fileInput");
+        const targetSelect = document.getElementById("targetColumn");
+        const fileNameDisplay = document.getElementById("fileNameDisplay");
+
+        fileInput.addEventListener("change", function (e) {
+          const file = e.target.files[0];
+          if (file) {
+            // Show the selected file name to the user.
+            fileNameDisplay.classList.remove("d-none");
+            fileNameDisplay.textContent = "Selected file: " + file.name;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+              const text = e.target.result;
+              const headers = text.split("\n")[0].split(",");
+
+              // Clear existing options except the default auto-select.
+              targetSelect.innerHTML =
+                '<option value="auto">Auto-select (Last Column)</option>';
+
+              headers.forEach((header, index) => {
+                if (header.trim()) {
+                  const option = document.createElement("option");
+                  option.value = header.trim();
+                  option.textContent = `${header.trim()} (Column ${index + 1})`;
+                  targetSelect.appendChild(option);
+                }
+              });
+            };
+            reader.readAsText(file);
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

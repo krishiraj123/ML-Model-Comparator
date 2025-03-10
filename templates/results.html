@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Analysis Results - ML Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Poppins", sans-serif;
+        background: linear-gradient(135deg, #74abe2, #5563de);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        padding: 40px;
+      }
+      .container {
+        background-color: #fff;
+        padding: 40px;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        max-width: 1200px;
+        width: 100%;
+      }
+      h2,
+      h3,
+      h4 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 20px;
+      }
+      h2 {
+        font-size: 32px;
+        font-weight: 600;
+      }
+      h3 {
+        font-size: 24px;
+        font-weight: 500;
+      }
+      h4 {
+        font-size: 20px;
+        font-weight: 500;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+      }
+      table th,
+      table td {
+        border: 1px solid #ddd;
+        padding: 12px;
+        text-align: center;
+        font-size: 14px;
+      }
+      table th {
+        background-color: #5563de;
+        color: #fff;
+      }
+      .highlight {
+        background-color: #e6ffed;
+        border: 1px solid #28a745;
+        color: #155724;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 10px;
+        text-align: center;
+        font-size: 20px;
+        font-weight: 600;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        margin-top: 30px;
+      }
+      canvas {
+        max-width: 100%;
+        height: 300px;
+      }
+      a.button {
+        display: inline-block;
+        background-color: #28a745;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        margin-top: 30px;
+        text-align: center;
+        font-size: 16px;
+        font-weight: 500;
+        transition: background-color 0.3s;
+      }
+      a.button:hover {
+        background-color: #218838;
+      }
+      .info-table {
+        margin-bottom: 30px;
+      }
+      .dataset-summary {
+        margin-bottom: 40px;
+      }
+      .analysis-insights {
+        background-color: #f9f9f9;
+        border-left: 4px solid #5563de;
+        padding: 20px;
+        margin: 30px 0;
+        border-radius: 8px;
+        font-size: 16px;
+        color: #333;
+      }
+      .analysis-insights ul {
+        margin-left: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>Machine Learning Analysis Results</h2>
+
+      <h3>Dataset Information</h3>
+      <table class="info-table">
+        <tr>
+          <th>Rows</th>
+          <th>Columns</th>
+          <th>Features</th>
+        </tr>
+        <tr>
+          <td>{{ dataset_info['shape'][0] }}</td>
+          <td>{{ dataset_info['shape'][1] }}</td>
+          <td>{{ feature_names|join(', ') }}</td>
+        </tr>
+      </table>
+
+      <h3>Dataset Summary</h3>
+      <table class="dataset-summary">
+        <tr>
+          <th>Column</th>
+          <th>Data Type</th>
+          <th>Missing Values</th>
+        </tr>
+        {% for col, missing in dataset_info['missing_values'].items() %}
+        <tr>
+          <td>{{ col }}</td>
+          <td>{{ dataset_info['data_types'][col] }}</td>
+          <td>{{ missing }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+
+      {% set best_model = results | max(attribute='accuracy') %}
+      <div class="highlight">
+        Recommended Model: <strong>{{ best_model['model'] }}</strong> with
+        Accuracy:
+        <strong>{{ best_model['accuracy'] }}%</strong>
+      </div>
+
+      <h3>Model Performance Metrics</h3>
+      <table>
+        <tr>
+          <th>Model</th>
+          <th>Accuracy</th>
+          <th>Precision</th>
+          <th>Recall</th>
+          <th>F1 Score</th>
+        </tr>
+        {% for result in results %}
+        <tr>
+          <td>{{ result['model'] }}</td>
+          <td>{{ result['accuracy'] }}%</td>
+          <td>{{ result['precision'] }}%</td>
+          <td>{{ result['recall'] }}%</td>
+          <td>{{ result['f1_score'] }}%</td>
+        </tr>
+        {% endfor %}
+      </table>
+
+      <div class="grid">
+        <div>
+          <h3>Accuracy Comparison (Bar Chart)</h3>
+          <canvas id="accuracyChart"></canvas>
+        </div>
+        <div>
+          <h3>Detailed Metrics (Radar Chart)</h3>
+          <canvas id="metricsRadarChart"></canvas>
+        </div>
+      </div>
+
+      <h3>Feature Importance (Tree Models)</h3>
+      {% if feature_importance %} {% for model, importances in
+      feature_importance.items() %}
+      <h4>{{ model }}</h4>
+      <table>
+        <tr>
+          <th>Feature</th>
+          <th>Importance</th>
+        </tr>
+        {% for i, importance in enumerate(importances) %}
+        <tr>
+          <td>{{ feature_names[i] }}</td>
+          <td>{{ "%.4f"|format(importance) }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+      {% endfor %} {% else %}
+      <p style="text-align: center">
+        No feature importance available for non-tree models.
+      </p>
+      {% endif %}
+
+      <div class="analysis-insights">
+        <h3>Detailed Analysis & Insights</h3>
+        <p>
+          The evaluation results provide a comprehensive view of each model's
+          performance. Notably, the recommended model—<strong
+            >{{ best_model['model'] }}</strong
+          >—achieves the highest accuracy of
+          <strong>{{ best_model['accuracy'] }}%</strong>, indicating its strong
+          overall predictive capability.
+        </p>
+        <ul>
+          <li>
+            <strong>Precision:</strong> At
+            <strong>{{ best_model['precision'] }}%</strong>, the model
+            demonstrates a high level of reliability in correctly predicting
+            positive cases.
+          </li>
+          <li>
+            <strong>Recall:</strong> With a recall of
+            <strong>{{ best_model['recall'] }}%</strong>, the model is effective
+            in capturing a majority of the actual positive instances.
+          </li>
+          <li>
+            <strong>F1 Score:</strong> The balanced F1 score of
+            <strong>{{ best_model['f1_score'] }}%</strong> further confirms that
+            the model maintains an excellent trade-off between precision and
+            recall.
+          </li>
+        </ul>
+        <p>
+          Comparisons between models are visualized using both the bar and radar
+          charts above. These charts help in identifying subtle performance
+          differences. In cases where performance metrics are closely aligned,
+          consider additional analyses such as hyperparameter tuning or ensemble
+          methods for further improvements.
+        </p>
+      </div>
+
+      <div style="text-align: center">
+        <a class="button" href="/">&#8592; Upload Another File</a>
+      </div>
+    </div>
+
+    <script>
+      const chartData = {{ chart_data | tojson | safe }};
+      new Chart(document.getElementById('accuracyChart'), {
+          type: 'bar',
+          data: {
+              labels: chartData.models,
+              datasets: [{
+                  label: 'Accuracy (%)',
+                  data: chartData.accuracies,
+                  backgroundColor: '#5563DE'
+              }]
+          },
+          options: {
+              responsive: true,
+              plugins: {
+                  legend: { display: false },
+                  title: {
+                      display: true,
+                      text: 'Model Accuracy Comparison'
+                  }
+              },
+              scales: {
+                  y: { beginAtZero: true, max: 100 }
+              }
+          }
+      });
+
+      const results = {{ results | tojson | safe }};
+      const models = results.map(r => r.model);
+      const accuracies = results.map(r => r.accuracy);
+      const precisions = results.map(r => r.precision);
+      const recalls = results.map(r => r.recall);
+      const f1Scores = results.map(r => r.f1_score);
+
+      new Chart(document.getElementById('metricsRadarChart'), {
+          type: 'radar',
+          data: {
+              labels: models,
+              datasets: [{
+                  label: 'Accuracy (%)',
+                  data: accuracies,
+                  backgroundColor: 'rgba(85, 99, 222, 0.2)',
+                  borderColor: '#5563DE',
+                  pointBackgroundColor: '#5563DE'
+              },
+              {
+                  label: 'Precision (%)',
+                  data: precisions,
+                  backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                  borderColor: 'rgba(255, 159, 64, 1)',
+                  pointBackgroundColor: 'rgba(255, 159, 64, 1)'
+              },
+              {
+                  label: 'Recall (%)',
+                  data: recalls,
+                  backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                  borderColor: 'rgba(75, 192, 192, 1)',
+                  pointBackgroundColor: 'rgba(75, 192, 192, 1)'
+              },
+              {
+                  label: 'F1 Score (%)',
+                  data: f1Scores,
+                  backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                  borderColor: 'rgba(153, 102, 255, 1)',
+                  pointBackgroundColor: 'rgba(153, 102, 255, 1)'
+              }]
+          },
+          options: {
+              responsive: true,
+              plugins: {
+                  title: {
+                      display: true,
+                      text: 'Detailed Metrics Comparison'
+                  }
+              },
+              scales: {
+                  r: {
+                      beginAtZero: true,
+                      max: 100
+                  }
+              }
+          }
+      });
+    </script>
+  </body>
+</html>
