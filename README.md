@@ -48,7 +48,7 @@ cd ML-Model-Comparator
 Install Python dependencies:  
 ```bash
 cd backend
-pip install -r requirements.txt
+pip install -r requirement.txt
 ```
 Run the Flask backend:  
 ```bash
